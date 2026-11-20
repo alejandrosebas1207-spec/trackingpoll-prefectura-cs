@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: trackingpoll-prefectura-cs
+    name: trackingpollprefectura
     env: node
     plan: free
     branch: main
