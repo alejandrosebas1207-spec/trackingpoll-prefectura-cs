@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracking Poll Prefectura de Pichincha 2026 · Clima Social</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea {
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+    body { font-family: 'Poppins', sans-serif; background-color: #cbd5e1; color: #0f172a; }
+    .card-clean { background: #f8fafc; border: 1px solid #94a3b8; box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.10); }
+    .card-candidate { background: #f8fafc; border: 1.5px solid #94a3b8; box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.08); transition: all 0.2s ease-in-out; }
+    .card-candidate:hover { border-color: #475569; transform: translateY(-1px); box-shadow: 0 6px 14px -2px rgba(15, 23, 42, 0.14); }
+    input[type=range] { accent-color: #10b981; }
+    .blur-gate { filter: blur(14px); pointer-events: none; user-select: none; }
+
+    /* Escala nativa ejecutiva mediante rem en HTML (sin romper coordenadas de Canvas en Chart.js) */
+    html { font-size: 15px; }
+    @media (min-width: 768px) { html { font-size: 17px; } }
+    @media (min-width: 1100px) { html { font-size: 19px; } }
+    @media (min-width: 1440px) { html { font-size: 21px; } }
+  </style>
+</head>
+<body class="p-2 sm:p-4 min-h-screen bg-slate-300" oncontextmenu="return false;" onselectstart="return false;" ondragstart="return false;">
+
+  <!-- ESCUDO DE SEGURIDAD ANTI-INSPECCIÓN -->
+  <div id="devToolsShield" class="fixed inset-0 z-[999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center text-center p-6 hidden">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mb-4 shadow-lg shadow-rose-950/40">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    </div>
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-950/60 border border-rose-800 text-rose-300 text-xs font-bold uppercase tracking-wider mb-2">
+      Alerta de Seguridad · Sistema Electoral
+    </div>
+    <h3 class="text-xl font-extrabold text-white mb-2">Herramientas de Inspección Deshabilitadas</h3>
+    <p class="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
+      El acceso al código fuente, consola de desarrollo e inspector de elementos está restringido por protocolo de confidencialidad de Clima Social.
+    </p>
+    <button onclick="location.reload()" class="px-5 py-2.5 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-slate-100 transition-all shadow-md">
+      Reanudar Tablero
+    </button>
+  </div>
+
+  <!-- MODAL DE BLOQUEO Y ACCESO PRIVADO (GATEKEEPER) -->
+  <div id="authGateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="bg-white max-w-sm w-full p-8 rounded-3xl shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+      <div class="flex justify-center mb-6">
+        <img src="./assets/01_ClimaSocial_EquipoTecnico_Horizontal_Transparente.png" alt="Clima Social · Equipo Técnico" class="h-10 w-auto object-contain">
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-900 tracking-tight mb-6">Tracking Poll Prefectura de Pichincha 2026</h2>
+
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+        <div class="text-left">
+          <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Clave de Acceso</label>
+          <input type="password" id="secretKeyInput" placeholder="Contraseña..." class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10 transition-all text-center tracking-widest" autofocus>
+          <div id="authErrorMsg" class="text-xs font-semibold text-rose-600 mt-1.5 hidden">Clave incorrecta. Acceso denegado.</div>
+        </div>
+
+        <button type="submit" class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md transition-all cursor-pointer">
+          Entrar al Tablero
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD (PROTEGIDO) -->
+  <div id="dashboardApp" class="blur-gate transition-all duration-500 max-w-7xl mx-auto space-y-2.5">
+
+    <!-- CABECERA INSTITUCIONAL UNIFICADA (TOP BAR ULTRACOMPACTA EN SLATE 900) -->
+    <header class="bg-slate-900 px-3.5 py-2 rounded-2xl flex flex-wrap items-center justify-between gap-2.5 shadow-md border border-slate-800 text-white">
+      <!-- Lado Izquierdo: Logo Oficial Clima Social Equipo Técnico + Título General y Subtítulo -->
+      <div class="flex items-center gap-3">
+        <img src="./assets/Logo_Equipo_Tecnico_Dark_Oficial.png" alt="Clima Social · Equipo Técnico" class="h-7 sm:h-8 w-auto object-contain">
+        <div class="h-6 w-px bg-slate-700 hidden sm:block"></div>
+        <div class="leading-tight">
+          <h1 class="text-xs sm:text-sm font-extrabold text-white tracking-tight" id="heroTitle">
+            Elecciones domingo 29 de noviembre de 2026
+          </h1>
+          <div class="text-[10px] sm:text-[11px] font-semibold text-slate-300 tracking-wide" id="heroSubtitle">
+            Tracking Poll Prefectura de Pichincha
+          </div>
+        </div>
+      </div>
+
+      <!-- Centro: Indicador Único de Escenario -->
+      <div class="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-xl border border-slate-700">
+        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+        <span class="text-xs font-extrabold text-white tracking-wide">Voto Prefecto de Pichincha</span>
+      </div>
+
+      <!-- Lado Derecho: Controlador Temporal Compacto -->
+      <div class="flex items-center gap-2 bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-700">
+        <div class="text-right">
+          <div class="text-[9px] uppercase font-bold text-slate-400 tracking-wider leading-none">Corte Activo</div>
+          <div class="text-xs font-black text-white leading-tight" id="currentReportLabel">Línea Base III · Nov 2026</div>
+        </div>
+        <div class="flex items-center gap-1 ml-1">
+          <button onclick="stepReport(-1)" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold rounded-lg border border-slate-600 bg-slate-700 text-white hover:bg-slate-600 transition-all cursor-pointer" title="Corte anterior">◀</button>
+          <input type="range" id="reportSlider" min="0" max="2" value="2" class="w-20 sm:w-28 cursor-pointer h-1.5 accent-emerald-400">
+          <button onclick="stepReport(1)" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold rounded-lg border border-slate-600 bg-slate-700 text-white hover:bg-slate-600 transition-all cursor-pointer" title="Corte siguiente">▶</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- BARRA TOOLBAR COMPACTA DE FILTROS SOCIODEMOGRÁFICOS -->
+    <div class="card-clean px-3 py-2 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1.5 text-slate-600 font-extrabold text-[11px] uppercase tracking-wider pr-1">
+          <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          <span>Filtros:</span>
+        </div>
+
+        <!-- 1. Circunscripción -->
+        <select id="filterCirc" onchange="onSingleFilterChange(this.id)" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer">
+          <option value="total">Circunscripción</option>
+          <option value="Urbana Norte">Urbana Norte</option>
+          <option value="Urbana Centro">Urbana Centro</option>
+          <option value="Urbana Sur">Urbana Sur</option>
+          <option value="Rural">Rural</option>
+        </select>
+
+        <!-- 2. Sexo -->
+        <select id="filterSexo" onchange="onSingleFilterChange(this.id)" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer">
+          <option value="total">Sexo</option>
+          <option value="Hombre">Hombre</option>
+          <option value="Mujer">Mujer</option>
+        </select>
+
+        <!-- 3. Edad -->
+        <select id="filterEdad" onchange="onSingleFilterChange(this.id)" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer">
+          <option value="total">Edad</option>
+          <option value="16 a 19 años">16 a 19 años</option>
+          <option value="20 a 29 años">20 a 29 años</option>
+          <option value="30 a 44 años">30 a 44 años</option>
+          <option value="45 a 60 años">45 a 60 años</option>
+          <option value="61 o más años">61 o más años</option>
+        </select>
+
+        <!-- 4. Educación -->
+        <select id="filterEducacion" onchange="onSingleFilterChange(this.id)" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer">
+          <option value="total">Educación</option>
+          <option value="Ninguno">Ninguno</option>
+          <option value="Básica, primaria">Básica, primaria</option>
+          <option value="Secundaria, bachillerato">Secundaria, bachillerato</option>
+          <option value="Superior, universitaria">Superior, universitaria</option>
+          <option value="Técnica, artesano">Técnica, artesano</option>
+        </select>
+
+        <!-- 5. Nivel de Ingresos -->
+        <select id="filterIngresos" onchange="onSingleFilterChange(this.id)" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer">
+          <option value="total">Ingresos</option>
+          <option value="Bajo">Bajo</option>
+          <option value="Medio bajo">Medio bajo</option>
+          <option value="Medio">Medio</option>
+          <option value="Medio alto o alto">Medio alto o alto</option>
+        </select>
+
+        <!-- Botón Limpiar -->
+        <button type="button" onclick="resetFilters()" id="btnResetFilters" class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-400 font-medium text-xs flex items-center gap-1 transition-all cursor-pointer" title="Limpiar todos los filtros">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Limpiar</span>
+        </button>
+      </div>
+
+      <!-- Badge de Muestra (Datos Nuevos Diarios + Sumatoria 3 Encuestas) -->
+      <div class="flex flex-col items-end text-right ml-auto pl-2">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="sampleDot"></span>
+          <span id="sampleBadge" class="text-xs font-black text-slate-800 tracking-tight leading-none">
+            Tracking Diario: n = 0
+          </span>
+        </div>
+        <div id="sampleTotalBadge" class="text-[10px] font-semibold text-slate-400 mt-1 leading-none">
+          Sumatoria 3 encuestas: n = 6.201
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETAS HORIZONTALES COMPACTAS DE LOS 4 CANDIDATOS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5" id="candidateCardsContainer">
+      <!-- Se inyecta dinámicamente -->
+    </div>
+
+    <!-- GRÁFICA DE EVOLUCIÓN TEMPORAL VIVA (SE ALIMENTA DÍA A DÍA) -->
+    <div class="card-clean p-3.5 sm:p-4 rounded-xl overflow-hidden">
+      <div class="flex flex-wrap justify-between items-center bg-slate-800 text-white -mx-3.5 -mt-3.5 sm:-mx-4 sm:-mt-4 px-4 py-2.5 mb-3 border-b border-slate-700 gap-2">
+        <div>
+          <h2 class="text-xs sm:text-sm font-extrabold text-white tracking-tight" id="chartSectionTitle">
+            Simulación de voto prefecto de Pichincha
+          </h2>
+        </div>
+        <span id="mainChartFilterBadge" class="text-[10px] font-bold text-emerald-300 bg-slate-700/90 border border-slate-600 px-2 py-0.5 rounded whitespace-nowrap">● Todo Quito</span>
+      </div>
+
+      <div class="relative h-64 sm:h-72 lg:h-[300px] w-full">
+        <canvas id="mainChartCanvas"></canvas>
+      </div>
+
+      <div class="flex justify-center items-center pt-2 mt-2 border-t border-slate-300/70 text-[11px] text-slate-500">
+        <div>Fuente: Tablas Depuradas Oficiales (Corte Diario 18:00h) · Clima Social</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICA DE EVOLUCIÓN DE RECHAZO: NUNCA VOTARÍA (ALCALDÍA) -->
+    <div class="card-clean p-3.5 sm:p-4 rounded-xl overflow-hidden hidden" id="antivotoChartCard">
+      <div class="flex flex-wrap justify-between items-center bg-slate-800 text-white -mx-3.5 -mt-3.5 sm:-mx-4 sm:-mt-4 px-4 py-2.5 mb-3 border-b border-slate-700 gap-2">
+        <div class="flex items-center gap-2">
+          <h2 class="text-xs sm:text-sm font-extrabold text-white tracking-tight">
+            Evolución de Rechazo · "¿Por cuál candidato nunca votaría?" (Alcaldía)
+          </h2>
+        </div>
+        <span id="antivotoChartBadge" class="text-[10px] font-bold text-emerald-300 bg-slate-700/90 border border-slate-600 px-2 py-0.5 rounded whitespace-nowrap">● Todo Quito</span>
+      </div>
+
+      <div class="relative h-56 sm:h-64 w-full">
+        <canvas id="antivotoChartCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- SECCIÓN INFERIOR: PIRÁMIDE POBLACIONAL, FIRMEZA, ANTIVOTO Y GESTIÓN -->
+    <div id="lowerCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 hidden">
+
+      <!-- 1. ESTRUCTURA DEMOGRÁFICA (SEXO Y EDAD PONDERADOS) -->
+      <div id="demografiaCard" class="card-clean p-3.5 sm:p-4 rounded-xl flex flex-col justify-between overflow-hidden">
+        <div class="flex flex-col flex-1">
+          <div class="bg-slate-800 text-white -mx-3.5 -mt-3.5 sm:-mx-4 sm:-mt-4 px-3.5 py-2.5 mb-3 border-b border-slate-700 text-center">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+              <h3 class="text-sm sm:text-base font-extrabold text-white text-left">Estructura Demográfica</h3>
+              <span class="cut-date-badge text-[10px] font-bold text-emerald-300 bg-slate-700/90 border border-slate-600 px-2 py-0.5 rounded whitespace-nowrap">● --</span>
+            </div>
+            <div class="flex items-center justify-center gap-1.5">
+              <span id="pyramidTagH" class="text-[11px] font-bold text-sky-200 bg-slate-700 border border-slate-600 px-2 py-0.5 rounded">♂ --</span>
+              <span id="pyramidTagM" class="text-[11px] font-bold text-rose-200 bg-slate-700 border border-slate-600 px-2 py-0.5 rounded">♀ --</span>
+            </div>
+          </div>
+
+          <!-- Filas Demográficas -->
+          <div class="flex-1 flex flex-col justify-evenly gap-2.5" id="piramideRows">
+            <!-- Inyectado dinámicamente -->
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-500 pt-2 border-t border-slate-300/70 flex justify-between items-center mt-2.5">
+          <span>Muestra: <strong id="pyramidTotal" class="text-slate-800">--</strong> casos</span>
+          <span class="text-emerald-700 font-bold">Muestra Activa</span>
+        </div>
+      </div>
+
+      <!-- 2-3. FIRMEZA DE VOTO -->
+      <div id="firmezaChartCard" class="card-clean p-3.5 sm:p-4 rounded-xl lg:col-span-2 flex flex-col justify-between overflow-hidden">
+        <div class="flex flex-col flex-1">
+          <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-800 text-white -mx-3.5 -mt-3.5 sm:-mx-4 sm:-mt-4 px-4 py-2.5 mb-3 border-b border-slate-700">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-extrabold text-white">Firmeza de Voto</h3>
+              <span class="cut-date-badge text-[10px] font-bold text-emerald-300 bg-slate-700/90 border border-slate-600 px-2 py-0.5 rounded whitespace-nowrap">● --</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-2.5 text-[11px] font-semibold text-slate-200">
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-[#155e75] ring-1 ring-white/30"></span>1. Duro</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-[#0ea5e9]"></span>2. Blando</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-[#7dd3fc]"></span>3. Posible</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-[#d1d5db]"></span>4. Incierto</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-[#b91c1c] ring-1 ring-white/30"></span>5. Techo</span>
+            </div>
+          </div>
+          <div class="relative flex-1 min-h-[240px] sm:min-h-[260px] w-full">
+            <canvas id="firmezaChartCanvas"></canvas>
+          </div>
+        </div>
+        <div class="text-[10.5px] text-slate-600 font-medium pt-2 border-t border-slate-300/70 text-center mt-2 leading-relaxed space-y-0.5">
+          <div><strong>1. Duro</strong> = Vota y está seguro · <strong>2. Blando</strong> = Vota y podría cambiar · <strong>3. Posible</strong> = % segunda opción</div>
+          <div><strong>4. Incierto</strong> = 100 - 1 - 2 - 3 - 5 · <strong>5. Techo</strong> = % nunca votaría</div>
+        </div>
+      </div>
+
+      <!-- 4. COYUNTURA Y CREDIBILIDAD (TRACKING POLL OFICIAL) -->
+      <div id="coyunturaCard" class="card-clean p-3.5 sm:p-4 rounded-xl flex flex-col justify-between overflow-hidden">
+        <div class="flex flex-col flex-1">
+          <div class="bg-slate-800 text-white -mx-3.5 -mt-3.5 sm:-mx-4 sm:-mt-4 px-3.5 py-2.5 mb-3 border-b border-slate-700 text-center">
+            <h3 class="text-sm sm:text-base font-extrabold text-white">Coyuntura y Credibilidad</h3>
+            <div class="mt-1.5">
+              <span id="coySegmentBadge" class="text-[10.5px] font-bold text-slate-100 bg-slate-700 border border-slate-600 px-2 py-0.5 rounded">
+                Tracking Nov
+              </span>
+            </div>
+          </div>
+
+          <div class="flex-1 flex flex-col justify-evenly gap-2.5">
+            <!-- Denuncias de Corrupción (Pabel Muñoz) -->
+            <div class="bg-slate-200/75 p-3 rounded-lg border border-slate-300 text-center">
+              <div class="text-xs font-extrabold text-slate-900 mb-0.5">Denuncias en el Municipio</div>
+              <div class="text-[11px] font-bold text-slate-700 mb-2" id="coyConoce">--</div>
+              <div class="w-full bg-slate-300 rounded-full h-3 flex overflow-hidden mb-2">
+                <div id="barEvidencia" class="bg-rose-600 h-full transition-all duration-300" style="width: 0%;"></div>
+                <div id="barCampana" class="bg-slate-700 h-full transition-all duration-300" style="width: 0%;"></div>
+              </div>
+              <div class="flex justify-around text-[11px] text-slate-700">
+                <span>Es corrupción: <strong id="txtEvidencia" class="text-rose-700 text-xs">--</strong></span>
+                <span>Campaña negativa: <strong id="txtCampana" class="text-slate-900 text-xs">--</strong></span>
+              </div>
+              <div class="text-[10px] text-slate-600 mt-1.5" id="coyFooterNote">--</div>
+            </div>
+
+            <!-- Credibilidad Daniel Noboa -->
+            <div class="bg-slate-200/75 p-3 rounded-lg border border-slate-300 text-center">
+              <div class="text-xs font-extrabold text-slate-900 mb-0.5">¿Le cree a Daniel Noboa?</div>
+              <div class="mb-2">
+                <span class="text-[11px] font-extrabold text-slate-500" id="noboaCredBadge">--</span>
+              </div>
+              <div class="w-full bg-slate-300 rounded-full h-3 flex overflow-hidden mb-2">
+                <div id="barNoboaPos" class="bg-emerald-600 h-full transition-all duration-300" style="width: 0%;"></div>
+                <div id="barNoboaNeg" class="bg-rose-600 h-full transition-all duration-300" style="width: 0%;"></div>
+              </div>
+              <div class="flex justify-around text-[11px] text-slate-700" id="noboaCredDetalle">
+                <span>Mucho/Algo: <strong id="noboaCreePos" class="text-emerald-700 text-xs">--</strong></span>
+                <span>Poco/Nada: <strong id="noboaCreeNeg" class="text-rose-700 text-xs">--</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BLOQUE SEGURIDAD Y DISPOSICIÓN DE VOTO (PREGUNTAS 10-13) -->
+    <div class="card-clean p-3.5 sm:p-4 rounded-xl overflow-hidden" id="apoyoChartCard">
+      <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-800 text-white -mx-3.5 -mt-3.5 sm:-mx-4 sm:-mt-4 px-4 py-2.5 mb-3 border-b border-slate-700">
+        <div class="flex items-center gap-2">
+          <h3 class="text-sm sm:text-base font-extrabold text-white">Seguridad y Disposición de Voto</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="apoyoDateBadge" class="text-[10px] font-bold text-emerald-300 bg-slate-700/90 border border-slate-600 px-2 py-0.5 rounded whitespace-nowrap">● --</span>
+          <span id="apoyoScenarioBadge" class="text-[10.5px] font-bold text-slate-100 bg-slate-700 border border-slate-600 px-2 py-0.5 rounded">Prefectura de Pichincha</span>
+        </div>
+      </div>
+      <div class="relative h-64 sm:h-72 w-full">
+        <canvas id="apoyoChartCanvas"></canvas>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-3 text-[11px] font-semibold text-slate-700 pt-2.5 border-t border-slate-300/70 mt-2">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-[#15803d]"></span>Definitivamente votará</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-[#0ea5e9]"></span>Podría votar</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-[#cbd5e1] border border-slate-400"></span>Nsr</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-[#f59e0b]"></span>Preferiría no votar</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-[#b91c1c]"></span>Definitivamente no votará</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MOTOR DEL DASHBOARD Y AUTENTICACIÓN OFUSCADA CON CACHE-BUSTER -->
+  <script src="./app.bundle.min.js?v=cs2026_prefectura_v1"></script>
+</body>
+</html>
