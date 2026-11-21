@@ -235,10 +235,10 @@ app.use((req, res, next) => {
 // 1. ENDPOINT DE AUTENTICACIÓN SERVER-SIDE (GATEKEEPER)
 app.post("/api/auth/verify", (req, res) => {
   const { pin } = req.body || {};
-  const cleanPin = (pin || "").trim();
+  const cleanPin = (pin || "").trim().toUpperCase();
 
-  // Clave autorizada oficial
-  const validPins = [WARROOM_PIN, "CSWR2026"];
+  // Clave autorizada oficial (case-insensitive para evitar errores en teclado móvil)
+  const validPins = [WARROOM_PIN.toUpperCase(), "CSWR2026"];
 
   if (validPins.includes(cleanPin)) {
     registerAccessEvent(req, true);
