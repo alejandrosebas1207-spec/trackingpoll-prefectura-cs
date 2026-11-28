@@ -6,13 +6,12 @@
 (function() {
   'use strict';
 
-  // 1. Silenciar salidas de consola y limpieza periódica
+  // 1. Silenciar salidas de consola (sin timers periódicos que consuman CPU)
   try {
     const noop = function() {};
     ['log', 'debug', 'info', 'warn', 'error', 'table', 'trace', 'dir', 'dirxml'].forEach(m => {
       window.console[m] = noop;
     });
-    setInterval(() => { window.console.clear(); }, 2000);
   } catch(e) {}
 
   // 2. Bloquear clic derecho
@@ -39,19 +38,7 @@
     }
   }, true);
 
-  // 4. Trampa de depuración continua
-  setInterval(function() {
-    (function antiDebug(i) {
-      if (('' + i / i).length !== 1 || i % 20 === 0) {
-        (function() {}).constructor('debugger')();
-      } else {
-        (function() {}).constructor('debugger')();
-      }
-      antiDebug(++i);
-    })(0);
-  }, 1000);
-
-  // 5. Detección de ventana DevTools (desactivada en móviles/tablets porque el teclado virtual y la barra de direcciones reducen innerHeight)
+  // 4. Detección ligera de ventana DevTools basada en eventos (cero consumo de CPU en reposo)
   function detectDevTools() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
     if (isMobile) return;
@@ -63,8 +50,7 @@
       if (shield) shield.classList.remove('hidden');
     }
   }
-  window.addEventListener('resize', detectDevTools);
-  setInterval(detectDevTools, 1000);
+  window.addEventListener('resize', detectDevTools, { passive: true });
 })();
 
 // Variables de Estado del Tablero
@@ -173,12 +159,32 @@ function getValidReportIdxs() {
 }
 
 function setupSlider() {
+  if (typeof Chart !== 'undefined' && Chart.defaults) {
+    Chart.defaults.animation = { duration: 140 };
+  }
+  if (typeof Image !== 'undefined') {
+    ['ALEXANDRO_TONELLO.png', 'GIOVANNA_UBIDIA.png', 'CARLA_CEVALLOS.png', 'JUAN_ZAPATA.png'].forEach(fn => {
+      const img = new Image();
+      img.src = `./assets/${fn}`;
+    });
+  }
   const slider = document.getElementById('reportSlider');
   slider.min = 0;
   slider.max = maxAvailableIdx;
   slider.value = currentReportIdx;
+  let rafId = 0;
   slider.addEventListener('input', function() {
-    setReportIndex(parseInt(this.value));
+    const val = parseInt(this.value, 10);
+    if (val === currentReportIdx) return;
+    if (rafId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId);
+    if (typeof requestAnimationFrame === 'function') {
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (val !== currentReportIdx) setReportIndex(val);
+      });
+    } else {
+      setReportIndex(val);
+    }
   });
 }
 
